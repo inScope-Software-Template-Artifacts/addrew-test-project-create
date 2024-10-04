@@ -1,0 +1,8 @@
+# Bonfire deployment configuration
+apps:
+- name: addrew-test-repo-create
+  components:
+    - name: service
+      host: local
+      repo: ./
+      path: /clowdapp.yaml

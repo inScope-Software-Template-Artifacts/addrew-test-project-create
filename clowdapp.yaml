@@ -1,0 +1,91 @@
+---
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: "${APP_NAME}"
+objects:
+- apiVersion: cloud.redhat.com/v1alpha1
+  kind: ClowdApp
+  metadata:
+    name: "${APP_NAME}"
+  spec:
+    envName: ${ENV_NAME}
+    database:
+      name: "${APP_NAME}"
+    deployments:
+    - name: service
+      minReplicas: ${{REPLICAS_SERVICE}}
+      deploymentStrategy:
+        privateStrategy: RollingUpdate
+      webServices:
+        public:
+          enabled: true
+          apiPath: "${APP_NAME}"
+      podSpec:
+        initContainers:
+          - args:
+            - "migrate"
+            inheritEnv: true
+            volumeMounts:
+              - name: data
+                mountPath: "${DATA_DIR}"
+        image: ${IMAGE}:${IMAGE_TAG}
+        env:
+          - name: APP_NAME
+            value: "${APP_NAME}"
+          - name: DATA_DIR
+            value: "${DATA_DIR}"
+        volumeMounts:
+          - name: data
+            mountPath: "${DATA_DIR}"
+        volumes:
+          - name: data
+            emptyDir : {}
+        resources:
+          limits:
+            cpu: ${CPU_LIMIT_SERVICE}
+            memory: ${MEMORY_LIMIT_SERVICE}
+          requests:
+            cpu: ${CPU_REQUEST_SERVICE}
+            memory: ${MEMORY_REQUEST_SERVICE}
+        livenessProbe:
+          httpGet:
+            path: /livez
+            port: ${{WEB_PORT}}
+          initialDelaySeconds: 3
+          periodSeconds: 3
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: ${{WEB_PORT}}
+
+parameters:
+- name: IMAGE_TAG
+  description: Image tag
+  required: true
+  value: latest
+- name: IMAGE
+  description: Image name
+- name: ENV_NAME
+  description: ClowdEnv Name
+- name: DATA_DIR
+  description: Data directory path
+  required: true
+  value: '/data'
+- name: REPLICAS_SERVICE
+  description: Replica count for backend service
+  value: "1"
+- name: APP_NAME
+  required: true
+  value: addrew-test-repo-create
+- name: WEB_PORT
+  description: Port this is running on
+  value: "8000"
+- name: MEMORY_LIMIT_SERVICE
+  value: 512Mi
+- name: MEMORY_REQUEST_SERVICE
+  value: 256Mi
+- name: CPU_LIMIT_SERVICE
+  value: 500m
+- name: CPU_REQUEST_SERVICE
+  value: 200m

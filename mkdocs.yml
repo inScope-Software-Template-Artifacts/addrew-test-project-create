@@ -1,0 +1,8 @@
+site_name: addrew-test-repo-create
+site_description: Description
+
+nav:
+  - Introduction: README.md
+
+plugins:
+  - techdocs-core
